@@ -123,7 +123,7 @@ struct ustack *rr_next(struct usched *s)
 	pthread_mutex_lock(&p->p_lock);
 	while (p->p_nr_ready == 0)
 		pthread_cond_wait(&p->p_todo, &p->p_lock);
-	p->p_run = p->p_ready[0];
+	p->p_run = p->p_ready[--p->p_nr_ready];
 	pthread_mutex_unlock(&p->p_lock);
 	return &p->p_run->r_stack;
 }
