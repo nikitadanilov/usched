@@ -66,7 +66,7 @@ void ustack_abort(void)
 enum { PAD = 300 };
 static void launch(struct ustack *u)
 {
-	char pad[PAD] = {};
+	char pad[PAD] = {}; /* Prevents stack_in() smashing cont() frame. */
 	u->u_bottom = pad;
 	(*u->u_f)(u->u_arg);
 }
