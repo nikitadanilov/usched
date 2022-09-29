@@ -14,21 +14,15 @@ static void stack_out(struct ustack *u);
 
 static __thread struct ustack *current = NULL;
 
-int usched_init(struct usched *s)
-{
-	return 0;
-}
-
-void usched_fini(struct usched *s)
-{
-}
-
 void usched_run(struct usched *s)
 {
 	int            anchor;
 	jmp_buf        buf;
 	struct ustack *u;
 	assert(s->s_anchor == NULL || s->s_anchor == &anchor);
+	assert(s->s_next  != NULL);
+	assert(s->s_alloc != NULL);
+	assert(s->s_free  != NULL);
 	s->s_anchor = &anchor;
 	setjmp(buf);
 	s->s_buf = &buf;

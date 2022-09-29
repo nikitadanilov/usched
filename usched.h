@@ -17,8 +17,6 @@ struct ustack {
 	void          *u_arg;
 };
 
-int  usched_init(struct usched *s);
-void usched_fini(struct usched *s);
 void usched_run(struct usched *s);
 void ustack_init(struct ustack *u, struct usched *s, void (*f)(void *),
 		 void *arg, void *stack, int len);
