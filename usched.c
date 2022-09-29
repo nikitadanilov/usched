@@ -65,6 +65,11 @@ void ustack_block(void)
 	}
 }
 
+void ustack_abort(void)
+{
+	longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
+}
+
 enum { PAD = 300 };
 static void launch(struct ustack *u)
 {
