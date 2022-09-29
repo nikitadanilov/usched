@@ -41,15 +41,14 @@ void usched_run(struct usched *s)
 
 void ustack_init (struct ustack *u, struct usched *s,
 		  void (*f)(void *), void *arg,
-		  void *stack, int len, void *datum)
+		  void *stack, int len)
 {
 	*u = (struct ustack) {
 		.u_sched = s,
 		.u_stack = stack,
 		.u_len   = len,
 		.u_f     = f,
-		.u_arg   = arg,
-		.u_datum = datum
+		.u_arg   = arg
 	};
 }
 

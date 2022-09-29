@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 		.s_free  = &_free
 	};
 	for (i = 0; i < NR; ++i) {
-		ustack_init(&u[i], &s, &f, (void *)(long)i, NULL, 0, &u[i]);
+		ustack_init(&u[i], &s, &f, (void *)(long)i, NULL, 0);
 	}
 	usched_init(&s);
 	usched_run(&s);
