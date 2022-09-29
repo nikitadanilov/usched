@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
 enum {
 	NR_PROCESSORS = 8,
@@ -66,17 +67,27 @@ void rr_fini(void)
 	}
 }
 
+int rr_start(void)
+{
+	int i;
+	for (i = 0; i < NR_PROCESSORS; ++i) {
+		pthread_create(&p[i].p_thread, NULL, &proc, &p[i]);
+	}
+	return 0;
+}
+
 struct rr_thread *rr_thread_init(void (*f)(void *), void *arg)
 {
 	struct rr_thread *t = calloc(1, sizeof *t);
 	if (t != NULL) {
 		struct processor *proc = &p[nr_t++ % NR_PROCESSORS];
 		ustack_init(&t->r_stack, &proc->p_sched, f, arg, NULL, 0);
-		pthread_mutex_lock(&p->p_lock);
-		assert(p->p_nr_ready < NR_THREADS);
-		p->p_ready[p->p_nr_ready++] = t;
-		pthread_cond_signal(&p->p_todo);
-		pthread_mutex_unlock(&p->p_lock);
+		pthread_mutex_lock(&proc->p_lock);
+		assert(proc->p_nr_ready < NR_THREADS);
+		proc->p_ready[proc->p_nr_ready] = t;
+		if (proc->p_nr_ready++ == 0)
+			pthread_cond_signal(&proc->p_todo);
+		pthread_mutex_unlock(&proc->p_lock);
 	}
 	return t;
 }
@@ -93,10 +104,12 @@ void rr_wait(void)
 		t->r_idx = p->p_nr_wait;
 		p->p_wait[p->p_nr_wait++] = t;
 		p->p_run = NULL;
-	} else
+		pthread_mutex_unlock(&p->p_lock);
+		ustack_block();
+	} else {
 		t->r_nr_wake--;
-	pthread_mutex_unlock(&p->p_lock);
-	ustack_block();
+		pthread_mutex_unlock(&p->p_lock);
+	}
 }
 
 void rr_wake(struct rr_thread *t)
@@ -107,9 +120,10 @@ void rr_wake(struct rr_thread *t)
 		assert(p->p_nr_ready < NR_THREADS);
 		--p->p_nr_wait;
 		p->p_wait[t->r_idx] = p->p_wait[p->p_nr_wait];
+		p->p_wait[t->r_idx]->r_idx = t->r_idx;
 		p->p_ready[p->p_nr_ready] = t;
-		++p->p_nr_ready;
-		pthread_cond_signal(&p->p_todo);
+		if (p->p_nr_ready++ == 0)
+			pthread_cond_signal(&p->p_todo);
 	} else
 		t->r_nr_wake++;
 	pthread_mutex_unlock(&p->p_lock);
@@ -118,11 +132,14 @@ void rr_wake(struct rr_thread *t)
 struct ustack *rr_next(struct usched *s)
 {
 	struct processor *p = (void *)s;
-	if (p->p_exit && p->p_nr_ready == 0 && p->p_nr_wait == 0)
-		return NULL; /* Safe without mutex. */
 	pthread_mutex_lock(&p->p_lock);
-	while (p->p_nr_ready == 0)
+	while (p->p_nr_ready == 0) {
+		if (p->p_exit && p->p_nr_wait == 0) {
+                	pthread_mutex_unlock(&p->p_lock);
+                	return NULL;
+        	}
 		pthread_cond_wait(&p->p_todo, &p->p_lock);
+	}
 	p->p_run = p->p_ready[--p->p_nr_ready];
 	pthread_mutex_unlock(&p->p_lock);
 	return &p->p_run->r_stack;
@@ -145,13 +162,14 @@ static void proc_init(struct processor *p)
 	p->p_sched.s_next  = &rr_next;
 	p->p_sched.s_alloc = &rr_alloc;
 	p->p_sched.s_free  = &rr_free;
-	pthread_create(&p->p_thread, NULL, &proc, p);
 }
 
 static void proc_fini(struct processor *p)
 {
+	pthread_mutex_lock(&p->p_lock);
 	p->p_exit = 1;
 	pthread_cond_signal(&p->p_todo);
+	pthread_mutex_unlock(&p->p_lock);
 	pthread_join(p->p_thread, NULL);
 	pthread_cond_destroy(&p->p_todo);
 	pthread_mutex_destroy(&p->p_lock);
