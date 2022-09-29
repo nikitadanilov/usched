@@ -34,7 +34,7 @@ void usched_run(struct usched *s)
 	s->s_buf = &buf;
 	while ((u = s->s_next(s)) != NULL) {
 		current = u;
-		u->u_top != NULL ? cont(u) : launch(u);
+		u->u_bottom != NULL ? cont(u) : launch(u);
 		current = NULL;
 	}
 }
@@ -56,10 +56,10 @@ void ustack_init (struct ustack *u, struct usched *s,
 void ustack_block(struct ustack *u)
 {
 	jmp_buf here;
-	assert((void *)&here < u->u_top);
+	assert((void *)&here < u->u_bottom);
 	if (setjmp(here) == 0) {
 		u->u_cont = &here;
-		u->u_bottom = u->u_cont - 32;
+		u->u_top = u->u_cont - 32;
 		stack_out(u);
 		longjmp(*(jmp_buf *)u->u_sched->s_buf, 1);
 	}
@@ -69,7 +69,7 @@ enum { PAD = 300 };
 static void launch(struct ustack *u)
 {
 	char pad[PAD] = {};
-	u->u_top = pad;
+	u->u_bottom = pad;
 	(*u->u_f)(u->u_arg);
 }
 
@@ -81,13 +81,13 @@ static void cont(struct ustack *u)
 
 static void stack_in(struct ustack *u)
 {
-	memcpy(u->u_bottom, u->u_stack, u->u_top - u->u_bottom);
+	memcpy(u->u_top, u->u_stack, u->u_bottom - u->u_top);
 }
 
 static void stack_out(struct ustack *u)
 {
 	struct usched *s    = u->u_sched;
-	int            used = u->u_top - u->u_bottom;
+	int            used = u->u_bottom - u->u_top;
 
 	if (u->u_stack != NULL && u->u_len < used) {
 		s->s_free(s, u->u_stack, u->u_len);
@@ -98,7 +98,7 @@ static void stack_out(struct ustack *u)
 		u->u_len = used;
 		assert(u->u_stack != NULL);
 	}
-	memcpy(u->u_stack, u->u_bottom, used);
+	memcpy(u->u_stack, u->u_top, used);
 }
 
 struct ustack *ustack_self()
