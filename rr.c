@@ -18,6 +18,7 @@ struct rr_thread {
 
 struct processor {
 	struct usched     p_sched; /* Must go first. */
+	int               p_exit;
 	pthread_t         p_thread;
 	pthread_mutex_t   p_lock;
 	pthread_cond_t    p_todo;
@@ -117,6 +118,8 @@ void rr_wake(struct rr_thread *t)
 struct ustack *rr_next(struct usched *s)
 {
 	struct processor *p = (void *)s;
+	if (p->p_exit && p->p_nr_ready == 0 && p->p_nr_wait == 0)
+		return NULL; /* Safe without mutex. */
 	pthread_mutex_lock(&p->p_lock);
 	while (p->p_nr_ready == 0)
 		pthread_cond_wait(&p->p_todo, &p->p_lock);
@@ -147,9 +150,11 @@ static void proc_init(struct processor *p)
 
 static void proc_fini(struct processor *p)
 {
-	pthread_mutex_destroy(&p->p_lock);
-	pthread_cond_destroy(&p->p_todo);
+	p->p_exit = 1;
+	pthread_cond_signal(&p->p_todo);
 	pthread_join(p->p_thread, NULL);
+	pthread_cond_destroy(&p->p_todo);
+	pthread_mutex_destroy(&p->p_lock);
 }
 
 static void *proc(void *arg)
