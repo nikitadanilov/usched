@@ -26,6 +26,5 @@ void usched_run(struct usched *s);
 void ustack_init(struct ustack *u, struct usched *s,
 		 void (*f)(void *), void *arg,
 		 void *stack, int len, void *datum);
-void ustack_block(struct ustack *u);
-
+void ustack_block(void);
 struct ustack *ustack_self(void);

@@ -28,7 +28,7 @@ static void f(void *arg)
 	int i = 0;
 	while (1) {
 		printf("%i:%i\n", idx, i);
-		ustack_block(ustack_self());
+		ustack_block();
 		i++;
 	}
 }

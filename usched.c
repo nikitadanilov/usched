@@ -53,15 +53,15 @@ void ustack_init (struct ustack *u, struct usched *s,
 	};
 }
 
-void ustack_block(struct ustack *u)
+void ustack_block(void)
 {
 	jmp_buf here;
-	assert((void *)&here < u->u_bottom);
+	assert((void *)&here < current->u_bottom);
 	if (setjmp(here) == 0) {
-		u->u_cont = &here;
-		u->u_top = u->u_cont - 32;
-		stack_out(u);
-		longjmp(*(jmp_buf *)u->u_sched->s_buf, 1);
+		current->u_cont = &here;
+		current->u_top = current->u_cont - 32;
+		stack_out(current);
+		longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
 	}
 }
 
