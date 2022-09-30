@@ -1,11 +1,46 @@
 #include <pthread.h>
-#include <semaphore.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <string.h>
 #include <inttypes.h>
 #include <assert.h>
+
+/* Simulate unnamed semaphores on macos. */
+#if defined(__APPLE__)
+#include <dispatch/dispatch.h>
+
+typedef dispatch_semaphore_t sem_t;
+
+static int sem_init(sem_t *sem, int pshared, unsigned int value)
+{
+	assert(!pshared);
+	assert(value == 0);
+	*sem = dispatch_semaphore_create(0);
+	return 0;
+}
+
+static int sem_post(sem_t *sem)
+{
+	dispatch_semaphore_signal(*sem);
+	return 0;
+}
+
+static int sem_wait(sem_t *sem)
+{
+	dispatch_semaphore_wait(*sem, DISPATCH_TIME_FOREVER);
+	return 0;
+}
+
+static int sem_destroy(sem_t *sem)
+{
+	dispatch_release(*sem);
+	return 0;
+}
+
+#else
+#include <semaphore.h>
+#endif
 
 static int n;
 static int r;
@@ -62,8 +97,8 @@ int main(int argc, char **argv)
 	pthread_attr_init(&attr);
 	if (d < 128 * 1024)
 		d = 128 * 1024;
-	result = pthread_attr_setstacksize(&attr, d);
-	assert(result == 0);
+	//result = pthread_attr_setstacksize(&attr, d);
+	//assert(result == 0);
 	result = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	assert(result == 0);
 	for (int i = 0; i < n * r; ++i) {
@@ -84,5 +119,8 @@ int main(int argc, char **argv)
 	end = 1000000 * tt.tv_sec + tt.tv_usec;
 	printf("%f\n", (end - start) / 1000000.);
 	free(t);
+	for (int i = 0; i < n * r; ++i) {
+		sem_destroy(&s[i]);
+	}
 	return 0;
 }
