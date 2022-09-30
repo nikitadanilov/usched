@@ -1,3 +1,4 @@
+/* cc -fno-stack-protector */
 #include "usched.h"
 #include <setjmp.h>
 #include <stdlib.h>
