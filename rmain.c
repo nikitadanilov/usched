@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 	rr_fini();
 	gettimeofday(&tt, NULL);
 	end = 1000000 * tt.tv_sec + tt.tv_usec;
-	printf("%6i %6i %6i %f\n", n, r, m, (end - start) / 1000000.);
+	printf("%f\n", (end - start) / 1000000.);
 	free(t);
 	return 0;
 }

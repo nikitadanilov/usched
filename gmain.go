@@ -42,5 +42,5 @@ func main() {
 		}
 	}
 	wg.Wait()
-	fmt.Printf("%6d %6d %6d %v\n", n, r, m, time.Since(start).Seconds())
+	fmt.Printf("%v\n", time.Since(start).Seconds())
 }

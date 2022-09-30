@@ -7,10 +7,6 @@
 #include <inttypes.h>
 #include <assert.h>
 
-#if !defined(PTHREAD_STACK_MIN)
-#define PTHREAD_STACK_MIN 0
-#endif
-
 static int n;
 static int r;
 static int m;
@@ -63,8 +59,9 @@ int main(int argc, char **argv)
 	s = calloc(n * r, sizeof s[0]);
 	assert(t != NULL);
 	assert(s != NULL);
-	if (d < PTHREAD_STACK_MIN)
-		d = PTHREAD_STACK_MIN;
+	pthread_attr_init(&attr);
+	if (d < 128 * 1024)
+		d = 128 * 1024;
 	result = pthread_attr_setstacksize(&attr, d);
 	assert(result == 0);
 	result = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
@@ -85,7 +82,7 @@ int main(int argc, char **argv)
 	}
 	gettimeofday(&tt, NULL);
 	end = 1000000 * tt.tv_sec + tt.tv_usec;
-	printf("%6i %6i %6i %f\n", n, r, m, (end - start) / 1000000.);
+	printf("%f\n", (end - start) / 1000000.);
 	free(t);
 	return 0;
 }
