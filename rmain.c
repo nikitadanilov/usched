@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <string.h>
+#include <inttypes.h>
 
 static int n;
 static int r;
