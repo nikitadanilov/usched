@@ -7,6 +7,10 @@
 #include <inttypes.h>
 #include <assert.h>
 
+#if !defined(PTHREAD_STACK_MIN)
+#define PTHREAD_STACK_MIN 0
+#endif
+
 static int n;
 static int r;
 static int m;
@@ -46,6 +50,7 @@ static void *f(void *arg)
 
 int main(int argc, char **argv)
 {
+	pthread_attr_t attr;
 	uint64_t start;
 	uint64_t end;
 	struct timeval tt;
@@ -58,16 +63,25 @@ int main(int argc, char **argv)
 	s = calloc(n * r, sizeof s[0]);
 	assert(t != NULL);
 	assert(s != NULL);
+	if (d < PTHREAD_STACK_MIN)
+		d = PTHREAD_STACK_MIN;
+	result = pthread_attr_setstacksize(&attr, d);
+	assert(result == 0);
+	result = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	assert(result == 0);
 	for (int i = 0; i < n * r; ++i) {
 		result = sem_init(&s[i], 0, 0);
 		assert(result == 0);
-		result = pthread_create(&t[i], NULL, &f, (void *)(long)i);
+		result = pthread_create(&t[i], &attr, &f, (void *)(long)i);
 		assert(result == 0);
 	}
 	gettimeofday(&tt, NULL);
 	start = 1000000 * tt.tv_sec + tt.tv_usec;
 	for (int i = 0; i < n * r; ++i) {
 		result = sem_post(&s[i]);
+	}
+	for (int i = 0; i < n * r; ++i) {
+		pthread_join(t[i], NULL);
 	}
 	gettimeofday(&tt, NULL);
 	end = 1000000 * tt.tv_sec + tt.tv_usec;
