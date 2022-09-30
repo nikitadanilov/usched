@@ -87,8 +87,11 @@ int rr_start(void)
 struct rr_thread *rr_thread_init(void (*f)(void *), void *arg)
 {
 	struct rr_thread  *t     = calloc(1, sizeof *t);
+	int chunk = nr_threads / nr_processors;
+	if (chunk < 128)
+		chunk = 128;
 	if (t != NULL) {
-		struct processor *proc = &procs[nr_t++ % nr_processors];
+		struct processor *proc = &procs[(nr_t++ / chunk) % nr_processors];
 		ustack_init(&t->r_stack, &proc->p_sched, f, arg, NULL, 0);
 		pthread_mutex_lock(&proc->p_lock);
 		assert(proc->p_nr_ready < nr_threads);
