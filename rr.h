@@ -1,6 +1,6 @@
 struct rr_thread;
 
-int  rr_init (void);
+int  rr_init (int proc_nr, int thread_nr);
 int  rr_start(void);
 void rr_fini (void);
 
