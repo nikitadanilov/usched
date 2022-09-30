@@ -5,15 +5,16 @@
 #include <sys/time.h>
 #include <string.h>
 #include <inttypes.h>
+#include <assert.h>
 
 static int n;
 static int r;
 static int m;
 static int d;
-static struct pthread_t  *t;
-static struct sem_t      *s;
+static pthread_t *t;
+static sem_t     *s;
 
-static void *loop(void *arg)
+static void loop(void *arg)
 {
 	int idx  = (long)arg;
 	int next = idx / n * n + (idx + 1) % n;
@@ -35,11 +36,12 @@ static void *loop(void *arg)
 	}
 }
 
-static void f(void *arg)
+static void *f(void *arg)
 {
 	char pad[d];
 	memset(pad, '#', d);
 	loop(arg);
+	return NULL;
 }
 
 int main(int argc, char **argv)
@@ -65,7 +67,7 @@ int main(int argc, char **argv)
 	gettimeofday(&tt, NULL);
 	start = 1000000 * tt.tv_sec + tt.tv_usec;
 	for (int i = 0; i < n * r; ++i) {
-		result = sem_post(&s[i], 1);
+		result = sem_post(&s[i]);
 	}
 	gettimeofday(&tt, NULL);
 	end = 1000000 * tt.tv_sec + tt.tv_usec;
