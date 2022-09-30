@@ -5,6 +5,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <assert.h>
+#include <err.h>
 
 /* Simulate unnamed semaphores on macos. */
 #if defined(__APPLE__)
@@ -100,17 +101,22 @@ int main(int argc, char **argv)
 	//result = pthread_attr_setstacksize(&attr, d);
 	//assert(result == 0);
 	result = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-	assert(result == 0);
+	if (result != 0)
+		err(1, "pthread_attr_setdetachstate");
 	for (int i = 0; i < n * r; ++i) {
 		result = sem_init(&s[i], 0, 0);
-		assert(result == 0);
+		if (result != 0)
+			err(1, "sem_init");
 		result = pthread_create(&t[i], &attr, &f, (void *)(long)i);
-		assert(result == 0);
+		if (result != 0)
+			err(1, "pthread_create");
 	}
 	gettimeofday(&tt, NULL);
 	start = 1000000 * tt.tv_sec + tt.tv_usec;
 	for (int i = 0; i < n * r; ++i) {
 		result = sem_post(&s[i]);
+		if (result != 0)
+			err(1, "sem_post");
 	}
 	for (int i = 0; i < n * r; ++i) {
 		pthread_join(t[i], NULL);
