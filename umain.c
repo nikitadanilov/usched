@@ -24,7 +24,7 @@ static void _free(struct usched *s, void *addr, int size)
 
 static void f(void *arg)
 {
-	int idx = (int)arg;
+	int idx = (long)arg;
 	int i = 0;
 	while (1) {
 		printf("%i:%i\n", idx, i);
