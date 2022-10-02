@@ -7,7 +7,7 @@ use std::time::Instant;
 fn main() {
     let argv : Vec<String> = env::args().collect();
     let n    : usize       = argv[1].parse().unwrap(); /* Cycle length. */
-    let r    : usize       = argv[2].parse().unwrap(); /* Number of CYCLES. */
+    let r    : usize       = argv[2].parse().unwrap(); /* Number of cycles. */
     let m    : usize       = argv[3].parse().unwrap(); /* Number of rounds. */
     let tobe               = f(n, r, m);
     let start = Instant::now();
