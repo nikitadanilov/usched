@@ -6,7 +6,7 @@ for n in 2 8 ;do
 	m=$((8000000 / $n / $r + 100))
 	P=$(pmain $n $r $m     1 0 || echo 100000.0)
 	G=$(gmain $n $r $m     0 0 || echo 100000.0)
-	G1T=$(gmain $n $r $m     0 1 || echo 100000.0)
+	GO1T=$(gmain $n $r $m     0 1 || echo 100000.0)
 	R=$(cycle/target/release/cycle $n $r $m || echo 1000000.0)
 	U=$(rmain $n $r $m 0 16 || echo 100000.0)
 	U1k=$(rmain $n $r $m 1000 16 || echo 100000.0)
