@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"runtime"
 )
 
 func main() {
@@ -13,6 +14,10 @@ func main() {
 	n, _ := strconv.Atoi(os.Args[1]) /* Cycle length. */
 	r, _ := strconv.Atoi(os.Args[2]) /* Number of cycles. */
 	m, _ := strconv.Atoi(os.Args[3]) /* Number of rounds. */
+	p, _ := strconv.Atoi(os.Args[5]) /* Number of processors. */
+	if p > 0 {
+		runtime.GOMAXPROCS(p);
+	}
 	token := struct {}{}
 	cycles := make([][]chan struct {}, r)
 	for i, _ := range cycles {
