@@ -44,8 +44,8 @@ def draw(d):
         plt.errorbar(F.keys(), [F[t][1] for t in F],
                      yerr = [[F[t][0] for t in F],
                              [F[t][2] for t in F]], label=k)
-    plt.legend()
-    plt.savefig('out.svg', format='svg')
+    plt.legend(loc='upper right')
+    plt.savefig(sys.stdout.buffer, format='svg')
     plt.show()
     
 if __name__ == '__main__':
