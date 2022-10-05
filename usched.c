@@ -39,6 +39,69 @@
  *       stacks, at least to the stacks of the blocked threads. Note that Go
  *       language, and probably other run-times, maintains a similar invariant.
  *
+ * Usage
+ * -----
+ *
+ * usched is only a dispatcher and not a scheduler: it blocks and resumes
+ * threads but
+ *
+ *     - it does not keep track of threads,
+ *
+ *     - it implements no scheduling policies.
+ *
+ * These things are left to the user, together with stack buffers allocation and
+ * freeing. The user supplies 3 call-backs:
+ *
+ *     - usched::s_next(): the scheduling function. This call-backs returns the
+ *       next thread to execute. This can be either a new (never before
+ *       executed) thread initialised with ustack_init(), or it can be a blocked
+ *       thread. The user must keep track of blocked and runnable threads,
+ *       presumably by providing wrappers to ustack_init() and ustack_block()
+ *       that would record thread state changes. It is up to usched::s_next() to
+ *       block and wait for events if there are no runnable threads and all
+ *       threads are waiting for something. If usched::s_next() returns NULL,
+ *       the dispatcher loop usched_run() exits. It is in general unsafe to
+ *       re-start it again (unless you can guarantee that it will be restarted
+ *       with exactly the same stack pointer, see anchor assertion in
+ *       usched_run()) so usched::s_next() should return NULL only when it is
+ *       time to shutdown;
+ *
+ *     - usched::s_alloc(): allocates new stack buffer of at least the specified
+ *       size. The user have full control over stack buffer allocation. It is
+ *       possible to pre-allocate the buffer when the thread is initialised
+ *       (reducing the cost of usched_block()), it is possible to cache buffers,
+ *       etc.;
+ *
+ *     - usched::s_free(): frees the previously allocated stack buffer.
+ *
+ * An implementation of these call-backs must maintain the following invariants:
+ *
+ *     - usched::s_next() can returns only new or blocked threads. That is, if a
+ *       thread completed by returning from its startup function ustack::u_f(),
+ *       usched::s_next() should never return it again;
+ *
+ *     - usched::s_alloc() should always return with the allocated stack
+ *       buffer. That is, usched::s_alloc() has the following options if it
+ *       fails to allocate the buffer of the specified size:
+ *
+ *           + do some cleanup and then abort the current thread by calling
+ *             ustack_abort(), which longjmp-s to usched_run(). The aborted
+ *             thread must never be returned by usched::s_next();
+ *
+ *           + do some cleanup and then longjmp to some point within the thread
+ *             stack, so that the thread continues the execution (and may re-try
+ *             blocking later again);
+ *
+ *           + longjmp out of usched_run() completely or kill the current native
+ *             thread.
+ *
+ * After installing the above call-backs in an instance of struct usched, the
+ * user calls usched_run() either from the main thread or form a dedicated
+ * native thread.
+ *
+ * rr.[ch] provides a simple "round-robin" scheduler implementing all the
+ * call-backs. Use it carefully, it was only tested with rmain.c benchmark.
+ *
  * Pictures!
  * ---------
  *
