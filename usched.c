@@ -1,3 +1,137 @@
+/*
+ * Overview
+ * --------
+ *
+ * A simple dispatcher for cooperative user-space threads.
+ *
+ * A typical implementation of user-space threads allocates a separate stack for
+ * each thread when the thread is created and then dispatches threads (as
+ * decided by the scheduler) through something similar to longjmp().
+ *
+ * In usched all threads are executed on the same stack. When a thread wants to
+ * block (usched_block()), a memory buffer for the stack used by this thread is
+ * allocated and the stack is copied to the buffer. After that the part of the
+ * stack used by the blocking thread is discarded (by longjmp()-ing to the base
+ * of the stack) and a new thread is selected. The stack of the selected thread
+ * is restored from its buffer and the thread is resumed by longjmp()-ing to the
+ * usched_block() that blocked it.
+ *
+ * Advantages:
+ *
+ *     - no need to allocate maximal possible stack at thread initialisation:
+ *       stack buffer is allocated as needed and can be freed when the thread is
+ *       resumed (not currently implemented);
+ *
+ *     - thread that doesn't block has 0 overhead: it is executed as a native
+ *       function call (through function pointer) without any context switching;
+ *
+ *     - because the threads are executed on the stack of same the native
+ *       underlying thread, native synchronisation primitives (mutices, etc.)
+ *       work, although the threads share underlying TLS.
+ *
+ * Disadvantages:
+ *
+ *     - stack copying introduced overhead (memcpy()) in each context switch;
+ *
+ *     - because stacks are moved around, addresses on a thread stack are only
+ *       valid while the thread is running. This invalidates certain common
+ *       programming idioms: other threads and heap cannot store pointers to the
+ *       stacks, at least to the stacks of the blocked threads. Note that Go
+ *       language, and probably other run-times, maintains a similar invariant.
+ *
+ * Pictures!
+ * ---------
+ *
+ * The following diagrams show stack management by usched. The stack grows from
+ * right to left.
+ *
+ * At the entrance to the dispatcher loop. usched_run(S):
+ *
+ *                                                    usched_run()
+ *    ----------------------------------------------+--------------+-------+
+ *                                                  | buf | anchor |  ...  |
+ *    ----------------------------------------------+--------------+-------+
+ *                                                  ^
+ *                                                  |
+ *                                                  sp = S->s_buf
+ *
+ * A new (never before executed) thread U is selected by S->s_next(), launch()
+ * calls the thread startup function U->u_f():
+ *
+ *                                   U->u_f() launch() usched_run()
+ *     -----------------------------+---------+-----+--------------+-------+
+ *                                  |         | pad | buf | anchor |  ...  |
+ *     -----------------------------+---------+-----+--------------+-------+
+ *                                  ^         ^
+ *                                  |         |
+ *                                  sp        U->u_bottom
+ *
+ * Thread executes as usual on the stack, until it blocks by calling
+ * usched_block():
+ *
+ *
+ *        usched_block()       bar() U->u_f() launch() usched_run()
+ *     ----------+------+-----+-----+---------+-----+--------------+-------+
+ *               | here | ... |     |         | pad | buf | anchor |  ...  |
+ *     ----------+------+-----+-----+---------+-----+--------------+-------+
+ *          ^    ^                            ^
+ *          |    +-- sp = U->u_cont           |
+ *          |                                 U->u_bottom
+ *          U->u_top
+ *
+ * The stack from U->u_top to U->u_bottom is copied into the stack buffer
+ * U->u_stack, and control returns to usched_run() by longjmp(S->s_buf):
+ *
+ *                                                    usched_run()
+ *    ----------------------------------------------+--------------+-------+
+ *                                                  | buf | anchor |  ...  |
+ *    ----------------------------------------------+--------------+-------+
+ *                                                  ^
+ *                                                  |
+ *                                                  sp = S->s_buf
+ *
+ * Next, suppose S->s_next() selects a previously blocked thread V ready to be
+ * resumed. usched_run() calls cont(V).
+ *
+ *                                            cont()  usched_run()
+ *    ----------------------------------------+-----+--------------+-------+
+ *                                            |     | buf | anchor |  ...  |
+ *    ----------------------------------------+-----+--------------+-------+
+ *                                            ^
+ *                                            |
+ *                                            sp
+ *
+ * cont() copies the stack from the buffer to [V->u_top, V->u_bottom]
+ * range. It's important that this memcpy() operation does not overwrite
+ * cont()'s own stack frame, this is why pad[] array is needed in launch(): it
+ * advances V->u_bottom and gives cont() some space to operate.
+ *
+ *      usched_block()       foo() V->u_f()   cont()  usched_run()
+ *    ---------+------+-----+-----+--------+--+-----+--------------+-------+
+ *             | here | ... |     |        |  |     | buf | anchor |  ...  |
+ *    ---------+------+-----+-----+--------+--+-----+--------------+-------+
+ *        ^    ^                           ^  ^
+ *        |    +-- V->u_cont               |  +-- sp
+ *        |                                |
+ *        V->u_top                         V->u_bottom
+ *
+ * Then cont() longjmp()-s to V->u_cont, restoring V execution context:
+ *
+ *      usched_block()       foo() V->u_f()   cont()  usched_run()
+ *    ---------+------+-----+-----+--------+--+-----+--------------+-------+
+ *             | here | ... |     |        |  |     | buf | anchor |  ...  |
+ *    ---------+------+-----+-----+--------+--+-----+--------------+-------+
+ *             ^
+ *             +-- sp = V->u_cont
+ *
+ * V continues its execution as if it returned from usched_block().
+ *
+ * Current limitations:
+ *
+ *     - the stack is assumed to grow toward lower addresses. This is easy to
+ *       fix, if necessary.
+ *
+ */
 /* cc -fno-stack-protector */
 #include "usched.h"
 #include <setjmp.h>
