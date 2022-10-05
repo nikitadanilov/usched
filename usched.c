@@ -198,10 +198,22 @@
  *
  * V continues its execution as if it returned from usched_block().
  *
- * Current limitations:
+ * Current limitations
+ * -------------------
  *
- *     - the stack is assumed to grow toward lower addresses. This is easy to
- *       fix, if necessary.
+ *  - the stack is assumed to grow toward lower addresses. This is easy to fix,
+ *    if necessary;
+ *
+ *  - the implementation is not signal-safe. Fixing this can be as easy as
+ *    replacing *jmp() calls with their sig*jmp() counterparts. At the moment
+ *    signal-based code, like gperf -lprofiler library, would most likely crash
+ *    usched;
+ *
+ *  - usched threads are cooperative: a thread will continue to run until it
+ *    completes of blocks. Adding preemption (via signal-based timers) is
+ *    relatively easy, the actual preemption decision will be relegated to the
+ *    external "scheduler" via a new usched::s_preempt() call-back invoked from
+ *    a signal handler.
  *
  */
 /* cc -fno-stack-protector */
