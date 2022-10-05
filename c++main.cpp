@@ -13,6 +13,7 @@ static int n;
 static int r;
 static int m;
 static int d;
+static uint32_t p;
 
 static std::vector<cppcoro::shared_task<void>>  t;
 static cppcoro::single_consumer_event          *e;
@@ -21,7 +22,9 @@ static cppcoro::static_thread_pool             *tp;
 static cppcoro::shared_task<void> pingpong(int idx)
 {
 	auto next = idx / n * n + (idx + 1) % n;
-	co_await tp->schedule();
+	if (p > 1) {
+		co_await tp->schedule();
+	}
 	for (int i = 0; i < m; ++i) {
 		if (idx % n == i % n) {
 			// std::cout << i << " * " << idx << " send\n";
@@ -47,8 +50,6 @@ using namespace std::chrono;
 
 int main(int argc, char **argv)
 {
-	uint32_t p;
-
 	n = std::atoi(argv[1]); /* Cycle length. */
 	r = std::atoi(argv[2]); /* Number of cycles. */
 	m = std::atoi(argv[3]); /* Number of rounds. */
