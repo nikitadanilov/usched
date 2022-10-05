@@ -6,28 +6,35 @@
  *
  * A typical implementation of user-space threads allocates a separate stack for
  * each thread when the thread is created and then dispatches threads (as
- * decided by the scheduler) through something similar to longjmp().
+ * decided by the scheduler) through some context switching mechanism, for
+ * example, longjmp().
  *
- * In usched all threads are executed on the same stack. When a thread wants to
- * block (usched_block()), a memory buffer for the stack used by this thread is
- * allocated and the stack is copied to the buffer. After that the part of the
- * stack used by the blocking thread is discarded (by longjmp()-ing to the base
- * of the stack) and a new thread is selected. The stack of the selected thread
- * is restored from its buffer and the thread is resumed by longjmp()-ing to the
- * usched_block() that blocked it.
+ * In usched all threads (represented by struct ustack) are executed on the same
+ * "native" stack. When a thread is about to block (usched_block()), a memory
+ * buffer for the stack used by this thread is allocated and the stack is copied
+ * to the buffer. After that the part of the stack used by the blocking thread
+ * is discarded (by longjmp()-ing to the base of the stack) and a new thread is
+ * selected. The stack of the selected thread is restored from its buffer and
+ * the thread is resumed by longjmp()-ing to the usched_block() that blocked it.
+ *
+ * The focus of this implementation is simplicity: the total size of usched.[ch]
+ * is less than 120LOC, as measured by SLOCCount.
  *
  * Advantages:
  *
  *     - no need to allocate maximal possible stack at thread initialisation:
- *       stack buffer is allocated as needed and can be freed when the thread is
- *       resumed (not currently implemented);
+ *       stack buffer is allocated as needed. It is also possible to free the
+ *       buffer when the thread is resumed (not currently implemented);
  *
  *     - thread that doesn't block has 0 overhead: it is executed as a native
- *       function call (through function pointer) without any context switching;
+ *       function call (through a function pointer) without any context
+ *       switching;
  *
- *     - because the threads are executed on the stack of same the native
+ *     - because the threads are executed on the stack of the same native
  *       underlying thread, native synchronisation primitives (mutices, etc.)
- *       work, although the threads share underlying TLS.
+ *       work, although the threads share underlying TLS. Of course one cannot
+ *       use native primitives to synchronise between usched threads running on
+ *       the same native thread.
  *
  * Disadvantages:
  *
@@ -45,7 +52,8 @@
  * usched is only a dispatcher and not a scheduler: it blocks and resumes
  * threads but
  *
- *     - it does not keep track of threads,
+ *     - it does not keep track of threads (specifically allocation and freeing
+ *       of struct ustack instances is done elsewhere),
  *
  *     - it implements no scheduling policies.
  *
@@ -62,7 +70,7 @@
  *       threads are waiting for something. If usched::s_next() returns NULL,
  *       the dispatcher loop usched_run() exits. It is in general unsafe to
  *       re-start it again (unless you can guarantee that it will be restarted
- *       with exactly the same stack pointer, see anchor assertion in
+ *       with exactly the same stack pointer, see the anchor assertion in
  *       usched_run()) so usched::s_next() should return NULL only when it is
  *       time to shutdown;
  *
