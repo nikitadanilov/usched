@@ -6,11 +6,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-enum {
-	NR_PROCESSORS = 1,
-	NR_THREADS    = 16 * 1024
-};
-
 struct rr_thread {
 	struct ustack r_stack; /* Must go first. */
 	int           r_idx;
