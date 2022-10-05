@@ -33,7 +33,13 @@ static void loop(void *arg)
 	rr_done();
 }
 
-static void f(void *arg)
+static
+#if defined(__clang__)
+__attribute__((optnone))
+#else
+__attribute__((optimize("O0"))) /* keep pad[] */
+#endif
+void f(void *arg)
 {
 	char pad[d];
 	memset(pad, '#', d);
