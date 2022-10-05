@@ -77,8 +77,9 @@
  * An implementation of these call-backs must maintain the following invariants:
  *
  *     - usched::s_next() can returns only new or blocked threads. That is, if a
- *       thread completed by returning from its startup function ustack::u_f(),
- *       usched::s_next() should never return it again;
+ *       thread completed by returning from its startup function ustack::u_f()
+ *       or aborted by calling usched_abort(), usched::s_next() should never
+ *       return it again;
  *
  *     - usched::s_alloc() should always return with the allocated stack
  *       buffer. That is, usched::s_alloc() has the following options if it
