@@ -38,7 +38,7 @@
  *
  * Disadvantages:
  *
- *     - stack copying introduced overhead (memcpy()) in each context switch;
+ *     - stack copying introduces overhead (memcpy()) in each context switch;
  *
  *     - because stacks are moved around, addresses on a thread stack are only
  *       valid while the thread is running. This invalidates certain common
@@ -82,16 +82,17 @@
  *
  *     - usched::s_free(): frees the previously allocated stack buffer.
  *
- * An implementation of these call-backs must maintain the following invariants:
+ * An implementation of these call-backs must satisfy the following
+ * requirements:
  *
- *     - usched::s_next() can returns only new or blocked threads. That is, if a
+ *     - usched::s_next() returns only new or blocked threads. That is, if a
  *       thread completed by returning from its startup function ustack::u_f()
- *       or aborted by calling usched_abort(), usched::s_next() should never
- *       return it again;
+ *       or aborted by calling usched_abort(), usched::s_next() never returns it
+ *       again;
  *
- *     - usched::s_alloc() should always return with the allocated stack
- *       buffer. That is, usched::s_alloc() has the following options if it
- *       fails to allocate the buffer of the specified size:
+ *     - usched::s_alloc() always returns with the allocated stack buffer. That
+ *       is, usched::s_alloc() has the following options if it fails to allocate
+ *       the buffer of the specified size:
  *
  *           + do some cleanup and then abort the current thread by calling
  *             ustack_abort(), which longjmp-s to usched_run(). The aborted
@@ -198,6 +199,18 @@
  *
  * V continues its execution as if it returned from usched_block().
  *
+ * Multiprocessing
+ * ---------------
+ *
+ * By design, a single instance of struct usched cannot take advantage of
+ * multiple processors, because all its threads are executed within a single
+ * native thread. Multiple instances of struct usched can co-exist within a
+ * single process address space, but a ustack thread created for one instance
+ * cannot be migrated to another. One possible strategy to add support for
+ * multiple processors is to create multiple instances of struct usched and
+ * schedule them (that is, schedule the threads running respective
+ * usched_run()-s) to processors via pthread_setaffinity_np() or similar.
+ *
  * Current limitations
  * -------------------
  *
@@ -208,6 +221,9 @@
  *    replacing *jmp() calls with their sig*jmp() counterparts. At the moment
  *    signal-based code, like gperf -lprofiler library, would most likely crash
  *    usched;
+ *
+ *  - usched.c must be compiled without optimisations and with
+ *    -fno-stack-protector option (gcc);
  *
  *  - usched threads are cooperative: a thread will continue to run until it
  *    completes of blocks. Adding preemption (via signal-based timers) is
