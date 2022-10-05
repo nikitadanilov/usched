@@ -21,7 +21,7 @@ static cppcoro::static_thread_pool             *tp;
 static cppcoro::shared_task<void> pingpong(int idx)
 {
 	auto next = idx / n * n + (idx + 1) % n;
-	//co_await tp->schedule();
+	co_await tp->schedule();
 	for (int i = 0; i < m; ++i) {
 		if (idx % n == i % n) {
 			// std::cout << i << " * " << idx << " send\n";
