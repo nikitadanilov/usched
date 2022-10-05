@@ -30,6 +30,7 @@ static void loop(void *arg)
 			rr_wake(t[next]);
 		}
 	}
+	rr_done();
 }
 
 static void f(void *arg)

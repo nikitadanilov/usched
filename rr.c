@@ -118,6 +118,11 @@ void rr_wait(void)
 	}
 }
 
+void rr_done(void)
+{
+	free(ustack_self()->u_stack);
+}
+
 void rr_wake(struct rr_thread *t)
 {
 	struct processor *p = (void *)t->r_stack.u_sched;
