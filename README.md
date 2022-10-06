@@ -263,7 +263,7 @@ usched was benchmarked against a few stackful (go, pthreads) and stackless
 (rust, c++ coroutines) implementations. A couple of caveats:
 
 - all benchmarking in general is subject to the reservations voiced by
-  Hyppocrates and usually translated (with the complete reversal of the meaning)
+  Hippocrates and usually translated (with the complete reversal of the meaning)
   as *ars longa, vita brevis*, which means: "the **art** [of doctor or tester]
   takes **long** time to learn, but the **life** of a student is **brief**,
   symptoms are vague, chances of success are doubtful".
