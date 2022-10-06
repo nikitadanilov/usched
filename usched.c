@@ -203,7 +203,7 @@
  * ---------------
  *
  * By design, a single instance of struct usched cannot take advantage of
- * multiple processors, because all its threads are executed within a single
+ * multiple processors, because all its threads are executing within a single
  * native thread. Multiple instances of struct usched can co-exist within a
  * single process address space, but a ustack thread created for one instance
  * cannot be migrated to another. One possible strategy to add support for
