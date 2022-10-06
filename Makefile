@@ -1,4 +1,4 @@
-CC=gcc
+CC=cc
 
 all:
 	$(CC) -O3 -Wall pmain.c -pthread -opmain
