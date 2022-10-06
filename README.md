@@ -1,5 +1,7 @@
 # usched: stackswap coroutines
 
+[[Blog entry](https://www.cofault.com/2022/10/usched-stackswap-coroutines-neither.html).]
+
 This repository contains a simple experimental implementation of
 [coroutines](https://en.wikipedia.org/wiki/Coroutine) alternative to well-known
 "stackless" and "stackful" methods.
