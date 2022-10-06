@@ -301,9 +301,9 @@ plots the results.
 
 - Go. Source:
   [gmain.go](https://github.com/nikitadanilov/usched/blob/master/gmain.go),
-  binary: gmain. The code is straightforward (it was a pleasure to write). D
-  is supported via runtime.GOMAXPROCS(). "GO1T" are results for a single native
-  thread, "GO" are results without the restriction on the number of threads.
+  binary: gmain. The code is straightforward (it was a pleasure to write). D is
+  supported via runtime.GOMAXPROCS(). "GO1T" are the results for a single native
+  thread, "GO" are the results without the restriction on the number of threads.
   
 - Rust. Source:
   [cycle/src/main.rs](https://github.com/nikitadanilov/usched/blob/master/cycle/src/main.rs),
@@ -344,12 +344,37 @@ Linux).
 
 <a href="https://github.com/nikitadanilov/usched/blob/master/c8.png"><img src="https://github.com/nikitadanilov/usched/blob/master/c8.png"/></a>
 
-(N == 8)
+(N == 8) A few notes:
 
+- As mentioned above, pthreads-based solution crashes with around 50K threads.
+
+- Most single-threaded versions ("GO1T", "R" and "U1T") are stable as corpse's
+  body temperature. Rust cools off completely at about 50K
+  coroutines. Single-threaded C++ ("C++1T") on the other hand is the most
+  performant solution for almost the entire range of measurement, it is only for
+  coroutine counts higher than 1M when "U" overtakes it.
+
+- It is interesting that a very simple and unoptimised usched fares so well
+  against heavily optimized C++ and Go run-times. (Again, see the reservations
+  about the benchmarking.)
+  
+- Rust is disappointing.
 
 <a href="https://github.com/nikitadanilov/usched/blob/master/c2.png"><img src="https://github.com/nikitadanilov/usched/blob/master/c2.png"/></a>
 
-(N == 8)
+(N == 2)
+
+- First, note that the scale is different on the vertical axis.
+
+- Single-threaded benchmarks display roughly the same behaviour (exactly the
+  same in "C++1T" case) as with N == 8.
+
+- Go is somewhat better. Perhaps its scheduler is optimised for message
+  ping-pong usual in channel-based concurrency models?
+  
+- usched variants are much worse (50% worse for "U") than N == 8.
+
+- Rust is disappointing.
 
 To reproduce:
 
