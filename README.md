@@ -222,10 +222,12 @@ By design, a single instance of `struct usched` cannot take advantage of
 multiple processors, because all its threads are executing within a single
 native thread. Multiple instances of `struct usched` can co-exist within a
 single process address space, but a ustack thread created for one instance
-cannot be migrated to another. One possible strategy to add support for
-multiple processors is to create multiple instances of struct usched and
-schedule them (that is, schedule the threads running respective
-`usched_run()`-s) to processors via `pthread_setaffinity_np()` or similar.
+cannot be migrated to another. One possible strategy to add support for multiple
+processors is to create multiple instances of struct usched and schedule them
+(that is, schedule the threads running respective `usched_run()`-s) to
+processors via `pthread_setaffinity_np()` or similar. See
+[rr.c](https://github.com/nikitadanilov/usched/blob/master/rr.c) for a
+simplistic implementation.
 
 Current limitations
 -------------------
