@@ -302,7 +302,7 @@ plots the results.
   binary: pmain. Pthreads-based stackful implementation in C. Uses default
   thread attributes. pmain.c also contains emulation of unnamed POSIX semaphores
   for Darwin. Plot label: "P". This benchmarks crashes with "pmain:
-  pthread_create: Resource temporarily unavailable" for large values of N\*R\*M.
+  pthread_create: Resource temporarily unavailable" for large values of N\*R.
 
 - Go. Source:
   [gmain.go](https://github.com/nikitadanilov/usched/blob/master/gmain.go),
@@ -354,7 +354,7 @@ Linux).
 - As mentioned above, pthreads-based solution crashes with around 50K threads.
 
 - Most single-threaded versions ("GO1T", "R" and "U1T") are stable as corpse's
-  body temperature. Rust cools off completely at about 50K
+  body temperature. Rust cools off completely at about 500K
   coroutines. Single-threaded C++ ("C++1T") on the other hand is the most
   performant solution for almost the entire range of measurement, it is only for
   coroutine counts higher than 1M when "U" overtakes it.
