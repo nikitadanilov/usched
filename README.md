@@ -30,8 +30,9 @@ There are two common coroutine implementation methods:
   stack, the coroutine uses a special activation frame allocated in the heap so
   that it can outlive its caller. Using heap-allocated frame to store all local
   variable lends itself naturally to compiler support, but some people are known
-  to implement stackless coroutines manually via a combination of pre-processing
-  and library.
+  to implement stackless coroutines manually via a combination of
+  pre-processing, library and tricks much worse than [Duff's
+  device](https://en.wikipedia.org/wiki/Protothread).
   
 Stackful and stateless are by no means the only possibilities. One of the
 earliest languages to feature generators
