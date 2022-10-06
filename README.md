@@ -339,8 +339,8 @@ plots the results.
 [bench.sh](https://github.com/nikitadanilov/usched/blob/master/bench.sh) runs
 all benchmarks with N == 2 (message ping-pong) and N == 8. Raw results are in
 [results.linux](https://github.com/nikitadanilov/usched/blob/master/results.linux). In
-the graphs, the horizontal axis is the number of coroutines (N\*R) and the
-vertical axis is the operations (N\*R\*M) per second
+the graphs, the horizontal axis is the number of coroutines (N\*R, logarithmic)
+and the vertical axis is the operations (N\*R\*M) per second
 
 Environment: Linux VM, 16 processors, 16GB of memory. Kernel: 4.18.0 (Rocky
 Linux).
