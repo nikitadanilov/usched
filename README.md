@@ -334,11 +334,15 @@ plots the results.
   
 - usched. Source:
   [rmain.c](https://github.com/nikitadanilov/usched/blob/master/rmain.c),
-  binary: rmain. Based on `usched.[ch]` and `rr.[ch]` Labels: "U", "U1K" (1000
-  bytes of additional stack space for each coroutine), "U10K" (10000 bytes) and
-  "U1T" (single-threaded), "U1TS" --- single-threaded version with pthread
-  locking in [rr.c](https://github.com/nikitadanilov/usched/blob/master/rr.c)
-  compiled out.
+  binary: rmain. Based on `usched.[ch]` and `rr.[ch]` This is our main interest,
+  so we test a few combinations of parameters.
+  - Label: "U": the default configuration, round-robin scheduler over 16 native threads,
+  - "U1K": 1000 bytes of additional stack space for each coroutine
+  - "U10K": 10000 bytes,
+  - "U1T": round-robin over 1 native thread,
+  - "U1TS": round-robin over 1 native thread with pthread locking in
+    [rr.c](https://github.com/nikitadanilov/usched/blob/master/rr.c) compiled
+    out (`-DSINGLE_THREAD` compilation option, a separate binary rmain.1t).
   
 [bench.sh](https://github.com/nikitadanilov/usched/blob/master/bench.sh) runs
 all benchmarks with N == 2 (message ping-pong) and N == 8. Raw results are in
@@ -395,4 +399,9 @@ To reproduce:
 
 ## Conclusion
 
-Overall, the results are surprisingly good. 
+Overall, the results are surprisingly good. The difference between "U1T" and
+"U1TS" indicates that the locking in
+[rr.c](https://github.com/nikitadanilov/usched/blob/master/rr.c) affects
+performance significantly, and affects it even more with multiple native
+threads, when locks are contended across processors. I'll try to produce a more
+efficient (perhaps lockless) version of a scheduler as the next step.
