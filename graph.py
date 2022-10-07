@@ -38,13 +38,13 @@ def draw(d):
                 for k in d[n][r][m]:
                     v = d[n][r][m][k]
                     avg = sum(v)/len(v)
-                    f[k][n*r] = [avg - min(v), avg, max(v) - avg]
+                    f[k][n*r] = [max(0, avg - min(v)), avg, max(0, max(v) - avg)]
     for k in f:
         F = f[k]
         plt.errorbar(F.keys(), [F[t][1] for t in F],
                      yerr = [[F[t][0] for t in F],
                              [F[t][2] for t in F]], label=k)
-    plt.legend(loc='upper right')
+    plt.legend(loc='lower right')
     plt.savefig(sys.stdout.buffer, format='svg')
     plt.show()
     
