@@ -336,7 +336,9 @@ plots the results.
   [rmain.c](https://github.com/nikitadanilov/usched/blob/master/rmain.c),
   binary: rmain. Based on `usched.[ch]` and `rr.[ch]` Labels: "U", "U1K" (1000
   bytes of additional stack space for each coroutine), "U10K" (10000 bytes) and
-  "U1T" (single-threaded).
+  "U1T" (single-threaded), "U1TS" --- single-threaded version with pthread
+  locking in [rr.c](https://github.com/nikitadanilov/usched/blob/master/rr.c)
+  compiled out.
   
 [bench.sh](https://github.com/nikitadanilov/usched/blob/master/bench.sh) runs
 all benchmarks with N == 2 (message ping-pong) and N == 8. Raw results are in
@@ -357,13 +359,14 @@ Linux).
   body temperature. Rust cools off completely at about 500K
   coroutines. Single-threaded C++ ("C++1T") on the other hand is the most
   performant solution for almost the entire range of measurement, it is only for
-  coroutine counts higher than 1M when "U" overtakes it.
+  coroutine counts higher than 500K when "U" overtakes it.
 
 - It is interesting that a very simple and unoptimised usched fares so well
   against heavily optimized C++ and Go run-times. (Again, see the reservations
   about the benchmarking.)
   
-- Rust is disappointing.
+- Rust is disappointing: one would hope to get better results from a rich type
+  system combined with compiler support.
 
 <a href="https://github.com/nikitadanilov/usched/blob/master/c2.png"><img src="https://github.com/nikitadanilov/usched/blob/master/c2.png"/></a>
 
@@ -387,5 +390,9 @@ To reproduce:
 	$ make
 	$ while : ;do ./bench.sh | tee -a results; sleep 5 ;done # collect enough results, this might take long...
 	^C
-	$ grep '^ *[2N],' results | python3 graph.py > c2.svg # create plot for N == 2
-	$ grep '^ *[8N],' results | python3 graph.py > c8.svg # create plot for N == 8
+	$ grep -h '^ *[2N],' results | python3 graph.py > c2.svg # create plot for N == 2
+	$ grep -h '^ *[8N],' results | python3 graph.py > c8.svg # create plot for N == 8
+
+## Conclusion
+
+Overall, the results are surprisingly good. 
