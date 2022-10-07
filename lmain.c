@@ -47,12 +47,15 @@ int main(int argc, char **argv)
 	uint64_t start;
 	uint64_t end;
 	struct timeval tt;
+	int p = atoi(argv[5]);
 	n = atoi(argv[1]); /* Cycle length. */
 	r = atoi(argv[2]); /* Number of cycles. */
 	m = atoi(argv[3]); /* Number of rounds. */
 	d = atoi(argv[4]); /* Additional stack depth. */
 	t = calloc(n * r, sizeof t[0]);
-	ll_init(atoi(argv[5]) /* processors */, n * r /* threads */);
+	if (p > r)
+		p = r;
+	ll_init(p /* processors */, n * r /* threads */);
 	for (int i = 0; i < n * r; ++i) {
 		t[i] = ll_thread_init(f, (void *)(long)i, i / n);
 	}
