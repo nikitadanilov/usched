@@ -34,6 +34,8 @@ enum state { WAIT, READY, RUN };
 
 static void  proc_init(struct processor *p);
 static void  proc_fini(struct processor *p);
+static void  proc_lock(struct processor *p);
+static void  proc_unlock(struct processor *p);
 static void *proc(void *arg);
 
 static enum state rr_state(struct rr_thread *t)
@@ -103,18 +105,18 @@ void rr_wait(void)
 	struct ustack    *u = ustack_self();
 	struct rr_thread *t = (void *)u;
 	struct processor *p = (void *)u->u_sched;
-	pthread_mutex_lock(&p->p_lock);
+	proc_lock(p);
 	assert(t == p->p_run);
 	if (t->r_nr_wake == 0) {
 		assert(p->p_nr_wait < nr_threads);
 		t->r_idx = p->p_nr_wait;
 		p->p_wait[p->p_nr_wait++] = t;
 		p->p_run = NULL;
-		pthread_mutex_unlock(&p->p_lock);
+		proc_unlock(p);
 		ustack_block();
 	} else {
 		t->r_nr_wake--;
-		pthread_mutex_unlock(&p->p_lock);
+		proc_unlock(p);
 	}
 }
 
@@ -126,7 +128,7 @@ void rr_done(void)
 void rr_wake(struct rr_thread *t)
 {
 	struct processor *p = (void *)t->r_stack.u_sched;
-	pthread_mutex_lock(&p->p_lock);
+	proc_lock(p);
 	if (rr_state(t) == WAIT) {
 		assert(p->p_nr_ready < nr_threads);
 		--p->p_nr_wait;
@@ -137,22 +139,22 @@ void rr_wake(struct rr_thread *t)
 			pthread_cond_signal(&p->p_todo);
 	} else
 		t->r_nr_wake++;
-	pthread_mutex_unlock(&p->p_lock);
+	proc_unlock(p);
 }
 
 struct ustack *rr_next(struct usched *s)
 {
 	struct processor *p = (void *)s;
-	pthread_mutex_lock(&p->p_lock);
+	proc_lock(p);
 	while (p->p_nr_ready == 0) {
 		if (p->p_exit && p->p_nr_wait == 0) {
-                	pthread_mutex_unlock(&p->p_lock);
+                	proc_unlock(p);
                 	return NULL;
         	}
 		pthread_cond_wait(&p->p_todo, &p->p_lock);
 	}
 	p->p_run = p->p_ready[--p->p_nr_ready];
-	pthread_mutex_unlock(&p->p_lock);
+	proc_unlock(p);
 	return &p->p_run->r_stack;
 }
 
@@ -182,10 +184,10 @@ static void proc_init(struct processor *p)
 
 static void proc_fini(struct processor *p)
 {
-	pthread_mutex_lock(&p->p_lock);
+	proc_lock(p);
 	p->p_exit = 1;
 	pthread_cond_signal(&p->p_todo);
-	pthread_mutex_unlock(&p->p_lock);
+	proc_unlock(p);
 	pthread_join(p->p_thread, NULL);
 	pthread_cond_destroy(&p->p_todo);
 	pthread_mutex_destroy(&p->p_lock);
@@ -199,3 +201,23 @@ static void *proc(void *arg)
 	usched_run(&p->p_sched);
 	return NULL;
 }
+
+#if defined(SINGLE_THREAD)
+static void  proc_lock(struct processor *p)
+{
+}
+
+static void  proc_unlock(struct processor *p)
+{
+}
+#else
+static void  proc_lock(struct processor *p)
+{
+	pthread_mutex_lock(&p->p_lock);
+}
+
+static void  proc_unlock(struct processor *p)
+{
+	pthread_mutex_unlock(&p->p_lock);
+}
+#endif

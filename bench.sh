@@ -12,7 +12,7 @@ for n in 2 8 ;do
 	U=$(rmain $n $r $m 0 16 || echo 100000.0)
 	U1k=$(rmain $n $r $m 1000 16 || echo 100000.0)
 	U10k=$(rmain $n $r $m 10000 16 || echo 100000.0)
-	U1T=$(rmain $n $r $m 0 1 || echo 100000.0)
+	U1T=$(rmain.1t $n $r $m 0 1 || echo 100000.0)
 	CPP=$(c++main $n $r $m 0 16 || echo 1000000.0)
 	CPP1T=$(c++main $n $r $m 0 1 || echo 1000000.0)
 	printf "%7d, %7d, %7d, %10.3f, %10.3f, %10.3f, %10.3f, %10.3f, %10.3f, %10.3f, %10.3f, %10.3f, %10.3f\n" \
