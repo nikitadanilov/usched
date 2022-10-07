@@ -342,7 +342,13 @@ plots the results.
   - "U1T": round-robin over 1 native thread,
   - "U1TS": round-robin over 1 native thread with pthread locking in
     [rr.c](https://github.com/nikitadanilov/usched/blob/master/rr.c) compiled
-    out (`-DSINGLE_THREAD` compilation option, a separate binary rmain.1t).
+    out (`-DSINGLE_THREAD` compilation option, a separate binary rmain.1t),
+  - **Update** "UL": uses "local" scheduler
+    [ll.c](https://github.com/nikitadanilov/usched/blob/master/ll.c). All
+    coroutines within a cycle are assigned to the same native thread so that
+    scheduling between them require no locking. This demonstrates very high
+    throughput (comparable to C++), but unfortunately I do not have time right
+    now to re-do all the measurements consistently. Binary: lmain.
   
 [bench.sh](https://github.com/nikitadanilov/usched/blob/master/bench.sh) runs
 all benchmarks with N == 2 (message ping-pong) and N == 8. Raw results are in
