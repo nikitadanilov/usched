@@ -90,12 +90,12 @@ struct rr_thread *rr_thread_init(void (*f)(void *), void *arg)
 	if (t != NULL) {
 		struct processor *proc = &procs[(nr_t++ / chunk) % nr_processors];
 		ustack_init(&t->r_stack, &proc->p_sched, f, arg, NULL, 0);
-		pthread_mutex_lock(&proc->p_lock);
+		proc_lock(proc);
 		assert(proc->p_nr_ready < nr_threads);
 		proc->p_ready[proc->p_nr_ready] = t;
 		if (proc->p_nr_ready++ == 0)
 			pthread_cond_signal(&proc->p_todo);
-		pthread_mutex_unlock(&proc->p_lock);
+		proc_unlock(proc);
 	}
 	return t;
 }
