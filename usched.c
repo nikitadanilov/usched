@@ -259,7 +259,7 @@ void usched_run(struct usched *s)
 	assert(s->s_alloc != NULL);
 	assert(s->s_free  != NULL);
 	s->s_anchor = &anchor;
-	setjmp(buf);
+	_setjmp(buf);
 	s->s_buf = &buf;
 	while ((u = s->s_next(s)) != NULL) {
 		current = u;
@@ -285,17 +285,17 @@ void ustack_block(void)
 {
 	jmp_buf here;
 	assert((void *)&here < current->u_bottom);
-	if (setjmp(here) == 0) {
+	if (_setjmp(here) == 0) {
 		current->u_cont = &here;
 		current->u_top = current->u_cont - 32;
 		stack_out(current);
-		longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
+		_longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
 	}
 }
 
 void ustack_abort(void)
 {
-	longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
+	_longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
 }
 
 enum { PAD = 300 };
@@ -309,7 +309,7 @@ static void launch(struct ustack *u)
 static void cont(struct ustack *u)
 {
 	stack_in(u);
-	longjmp(*(jmp_buf *)u->u_cont, 1);
+	_longjmp(*(jmp_buf *)u->u_cont, 1);
 }
 
 static void stack_in(struct ustack *u)
