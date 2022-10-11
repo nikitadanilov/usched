@@ -430,8 +430,8 @@ To reproduce:
 	$ make
 	$ while : ;do ./bench.sh | tee -a results; sleep 5 ;done # collect enough results, this might take long...
 	^C
-	$ grep -h '^ *[2N],' results | python3 graph.py c2.svg # create plot for N == 2
-	$ grep -h '^ *[8N],' results | python3 graph.py c8.svg # create plot for N == 8
+	$ grep -h '^ *[2N],' results | python3 graph.py c2.svg > c2-table.md # create plot for N == 2
+	$ grep -h '^ *[8N],' results | python3 graph.py c8.svg > c8-table.md # create plot for N == 8
 
 ## Conclusion
 
