@@ -2,6 +2,10 @@
 
 [[Blog entry](https://www.cofault.com/2022/10/usched-stackswap-coroutines-neither.html).]
 
+[Update](#update): with the new
+[ll.c](https://github.com/nikitadanilov/usched/blob/master/ll.c) scheduler,
+usched beats C++ coroutines.
+
 This repository contains a simple experimental implementation of
 [coroutines](https://en.wikipedia.org/wiki/Coroutine) alternative to well-known
 "stackless" and "stackful" methods.
@@ -343,18 +347,13 @@ plots the results.
   - "U1TS": round-robin over 1 native thread with pthread locking in
     [rr.c](https://github.com/nikitadanilov/usched/blob/master/rr.c) compiled
     out (`-DSINGLE_THREAD` compilation option, a separate binary rmain.1t),
-  - **Update** "UL": uses "local" scheduler
-    [ll.c](https://github.com/nikitadanilov/usched/blob/master/ll.c). All
-    coroutines within a cycle are assigned to the same native thread so that
-    scheduling between them require no locking. This demonstrates very high
-    throughput (comparable to C++), but unfortunately I do not have time right
-    now to re-do all the measurements consistently. Binary: lmain.
+  - **Update** "UL": see [below](#update)
   
 [bench.sh](https://github.com/nikitadanilov/usched/blob/master/bench.sh) runs
 all benchmarks with N == 2 (message ping-pong) and N == 8. Raw results are in
 [results.linux](https://github.com/nikitadanilov/usched/blob/master/results.linux). In
 the graphs, the horizontal axis is the number of coroutines (N\*R, logarithmic)
-and the vertical axis is the operations (N\*R\*M) per second
+and the vertical axis is 1e8 (100 000 000) operations (N\*R\*M) per second
 
 Environment: Linux VM, 16 processors, 16GB of memory. Kernel: 4.18.0 (Rocky
 Linux).
@@ -424,6 +423,39 @@ Linux).
 
 - Rust is disappointing.
 
+## Update  <a name="update"></a>
+
+"UL" benchmark used"local" scheduler
+[ll.c](https://github.com/nikitadanilov/usched/blob/master/ll.c). All coroutines
+within a cycle are assigned to the same native thread so that scheduling between
+them require no locking. This demonstrates very high throughput (comparable to
+C++). Binary: lmain.
+	
+I re-run all benchmarks on a different hardware: Apple Macbook with 2,2 GHz
+6-Core Intel Core i7, 16 GB 2400 MHz DDR4.
+
+Data below are for the main contenders: C++, GO and UL.
+
+<a href="https://github.com/nikitadanilov/usched/blob/master/c8-darwin.png"><img src="https://github.com/nikitadanilov/usched/blob/master/c8-darwin.png"/></a>
+
+| | 16|32|64|400|800|4000|8000|40000|80000|400000|800000|4000000|8000000 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| GO | 7.73|12.78|19.95|32.60|32.30|28.58|22.86|14.27|19.93|30.54|30.33|28.66|26.80 |
+| C++ | 108.94|123.49|134.48|126.24|120.17|115.95|114.17|113.52|116.35|116.87|113.87|107.62|105.19 |
+| UL | 56.06|95.57|151.57|204.74|209.54|212.77|214.84|216.06|215.44|202.00|193.26|181.96|181.16 |
+
+(N == 8) and
+
+<a href="https://github.com/nikitadanilov/usched/blob/master/c2-darwin.png"><img src="https://github.com/nikitadanilov/usched/blob/master/c2-darwin.png"/></a>
+
+| | 4|8|16|100|200|1000|2000|10000|20000|100000|200000|1000000|2000000 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| GO | 8.92|12.76|20.33|30.22|31.87|33.37|33.98|34.07|31.17|32.43|33.42|33.77|33.35 |
+| C++ | 43.58|55.43|106.74|166.39|160.42|151.48|147.41|138.34|134.57|120.52|114.33|103.95|101.12 |
+| UL | 17.18|23.58|41.68|62.98|72.01|85.47|88.23|92.09|92.61|89.97|88.00|83.41|82.66 |
+
+(N == 2).
+
 To reproduce:
 
     $ # install libraries and everything, then...
@@ -441,3 +473,7 @@ Overall, the results are surprisingly good. The difference between "U1T" and
 performance significantly, and affects it even more with multiple native
 threads, when locks are contended across processors. I'll try to produce a more
 efficient (perhaps lockless) version of a scheduler as the next step.
+
+**Update**. With
+[ll.c](https://github.com/nikitadanilov/usched/blob/master/ll.c) scheduler,
+usched *beats* C++ for a wide range of parameters.
