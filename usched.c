@@ -252,15 +252,15 @@ static __thread struct ustack *current = NULL;
 void usched_run(struct usched *s)
 {
 	int            anchor;
-	jmp_buf        buf;
+	uintptr_t      buf[5];
 	struct ustack *u;
 	assert(s->s_anchor == NULL || s->s_anchor == &anchor);
 	assert(s->s_next  != NULL);
 	assert(s->s_alloc != NULL);
 	assert(s->s_free  != NULL);
 	s->s_anchor = &anchor;
-	_setjmp(buf);
-	s->s_buf = &buf;
+	s->s_buf = buf;
+	__builtin_setjmp((void **)buf);
 	while ((u = s->s_next(s)) != NULL) {
 		current = u;
 		u->u_bottom != NULL ? cont(u) : launch(u);
@@ -283,19 +283,19 @@ void ustack_init (struct ustack *u, struct usched *s,
 
 void ustack_block(void)
 {
-	jmp_buf here;
+	uintptr_t here[5];
 	assert((void *)&here < current->u_bottom);
-	if (_setjmp(here) == 0) {
-		current->u_cont = &here;
+	if (__builtin_setjmp((void **)here) == 0) {
+		current->u_cont = here;
 		current->u_top = current->u_cont - 32;
 		stack_out(current);
-		_longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
+		__builtin_longjmp((void **)current->u_sched->s_buf, 1);
 	}
 }
 
 void ustack_abort(void)
 {
-	_longjmp(*(jmp_buf *)current->u_sched->s_buf, 1);
+	__builtin_longjmp((void **)current->u_sched->s_buf, 1);
 }
 
 enum { PAD = 300 };
@@ -309,7 +309,7 @@ static void launch(struct ustack *u)
 static void cont(struct ustack *u)
 {
 	stack_in(u);
-	_longjmp(*(jmp_buf *)u->u_cont, 1);
+	__builtin_longjmp((void **)u->u_cont, 1);
 }
 
 static void stack_in(struct ustack *u)
